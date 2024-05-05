@@ -24,13 +24,11 @@ export const replaceEmailHtmlSource = (
 export const replacePlainTextSource = (plainTextSource: string) => {
   const previewTextRegex = /(\*\|MC_PREVIEW_TEXT\|\*)/g;
   const archiveRegex = /View this email in your browser \(\*\|ARCHIVE\|\*\)/g;
-  const archiveLinkRegex = /^https:\/\/diri\.my\/courses.+/gm;
   const unsubscribeRegex = /Copyright(\n|.)*?\(\*\|UNSUB\|\*\)/g;
   let plainText = "";
 
   plainText = plainTextSource.replace(previewTextRegex, "");
   plainText = plainText.replace(archiveRegex, "");
-  plainText = plainText.replace(archiveLinkRegex, "");
   plainText = plainText.replace(unsubscribeRegex, "");
 
   return plainText;

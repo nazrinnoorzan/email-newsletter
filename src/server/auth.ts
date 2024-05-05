@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // Add logic here to look up the user from the credentials supplied
-        const user = { id: "1", name: "DIRI Admin", email: env.NEXTAUTH_EMAIL };
+        const user = { id: "1", name: "Admin", email: env.NEXTAUTH_EMAIL };
         const { email, password } = credentials as {
           email: string;
           password: string;

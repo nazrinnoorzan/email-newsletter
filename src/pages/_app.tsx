@@ -22,9 +22,8 @@ const MyApp: AppType<{ session: Session | null }> = ({
   return (
     <SessionProvider session={session}>
       <Head>
-        <title>DIRI Email Blasting</title>
-        <meta name="description" content="DIRI Email Blasting System" />
-        <link rel="icon" href="/diri-favico.jpg" />
+        <title>Email Blasting</title>
+        <meta name="description" content="Email Blasting System" />
         <meta name="robots" content="noindex,nofollow" />
       </Head>
       <ToastContainer />

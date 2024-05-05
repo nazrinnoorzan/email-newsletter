@@ -1,5 +1,4 @@
 import { signOut } from "next-auth/react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
@@ -17,14 +16,7 @@ export default function NavBar() {
           href="/compose"
           className="flex items-center space-x-3 rtl:space-x-reverse"
         >
-          <Image
-            src="/navbar-diri-logo.svg"
-            alt="DIRI Logo"
-            className="h-8"
-            width={103}
-            height={32}
-            priority
-          />
+          Home
         </Link>
         <div className="flex space-x-3 md:order-2 md:space-x-0 rtl:space-x-reverse">
           <button
