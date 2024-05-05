@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply text-white;
+  }
+}
+
+@layer components {
+  table {
+    @apply w-full table-fixed border-collapse overflow-hidden;
+  }
+  th,
+  td {
+    @apply p-3.5 text-white;
+  }
+  th {
+    @apply text-left;
+  }
+  thead th {
+    @apply bg-orange-600;
+  }
+  tbody tr {
+    @apply bg-gray-600 hover:bg-gray-300;
+  }
+}

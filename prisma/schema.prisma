@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider      = "prisma-client-js"
+    binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+    provider = "mysql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
+}
+
+model Subscriber {
+    id         String   @id @default(cuid())
+    firstName  String?
+    lastName   String?
+    email      String   @unique
+    isDeactive Boolean  @default(false)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    list       List[]
+}
+
+model Segment {
+    id   Int    @id @default(autoincrement())
+    name String @unique
+    list List[]
+}
+
+model List {
+    subscriberId String
+    segmentId    Int
+    segment      Segment    @relation(fields: [segmentId], references: [id])
+    subscriber   Subscriber @relation(fields: [subscriberId], references: [id])
+
+    @@id([subscriberId, segmentId])
+}
