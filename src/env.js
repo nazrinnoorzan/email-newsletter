@@ -34,6 +34,7 @@ export const env = createEnv({
     SES_REGION: z.string(),
     SES_EMAIL_SENDER: z.string(),
     SES_EMAIL_RETURN: z.string(),
+    SQS_QUEUE_URL: z.string(),
   },
 
   /**
@@ -61,6 +62,7 @@ export const env = createEnv({
     SES_REGION: process.env.SES_REGION,
     SES_EMAIL_SENDER: process.env.SES_EMAIL_SENDER,
     SES_EMAIL_RETURN: process.env.SES_EMAIL_RETURN,
+    SQS_QUEUE_URL: process.env.SQS_QUEUE_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
