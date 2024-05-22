@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { toast } from "react-toastify";
@@ -29,7 +29,6 @@ export default function Compose() {
   const [emailData, setEmailData] = useState<IEmailData>(defaultEmailData);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
-  const [isShowWarning, setIsShowWarning] = useState(false);
   const [selectedList, setSelectedList] = useState("");
   const [selectedListSusbcribers, setSelectedListSusbcribers] =
     useState<SelectedListSusbcribers | null>(null);
@@ -69,17 +68,6 @@ export default function Compose() {
       console.error("Sending email failed!", error);
     },
   });
-
-  useEffect(() => {
-    if (!selectedListSusbcribers) return;
-
-    if (selectedListSusbcribers.list.length > 348) {
-      displayErrorToast("Email list exceed 348 emails!");
-      setIsShowWarning(true);
-    } else {
-      setIsShowWarning(false);
-    }
-  }, [selectedListSusbcribers]);
 
   if (status === "loading" || isSegmentListLoading) return <p>Loading...</p>;
   if (!sessionData) return <p>Access Denied</p>;
@@ -136,8 +124,7 @@ export default function Compose() {
       !selectedListSusbcribers ||
       !emailData.subject ||
       !emailData.bodyHtml ||
-      !emailData.bodyPlainText ||
-      isShowWarning
+      !emailData.bodyPlainText
     )
       return;
 
@@ -224,12 +211,6 @@ export default function Compose() {
                 <span className="mx-2">Send Preview Email</span>
               </button>
             </div>
-            {isShowWarning && (
-              <p className="mt-4 text-red-700">
-                Email list exceed 348 emails! Please blast email to less than
-                348 emails.
-              </p>
-            )}
           </div>
           <div className="flex h-full w-full flex-col items-center p-4 lg:w-3/5">
             <div className="flex flex-col">
