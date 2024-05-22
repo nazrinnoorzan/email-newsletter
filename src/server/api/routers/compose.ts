@@ -26,9 +26,12 @@ export const composeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
+      const sqsMessageGroupId = `${Date.now()}`;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let x = 0; x < input.toAddress.length; x++) {
-        console.log(`sending emails ${x + 1} of ${input.toAddress.length}`);
+        console.log(
+          `sending emails ${x + 1} of ${input.toAddress.length}. Email subject is ${input.subject}`,
+        );
 
         const unsubscribeLinkHtml = `<div style="text-align: center;">Copyright (C) ${new Date().getFullYear()} All rights reserved. <a href="${env.NEXTAUTH_URL}/unsubscribe/${input.toAddress[x]!.subscribeId}" target="_blank;">Unsubscribe</a></div>`;
         const unsubscribeTextHtml = `Copyright (C) ${new Date().getFullYear()} All rights reserved. You can unsubscribe here: ${env.NEXTAUTH_URL}/unsubscribe/${input.toAddress[x]!.subscribeId}`;
@@ -41,6 +44,8 @@ export const composeRouter = createTRPCRouter({
             html: input.bodyHtml + unsubscribeLinkHtml,
             text: input.bodyPlainText + unsubscribeTextHtml,
           }),
+          MessageGroupId: sqsMessageGroupId,
+          MessageDeduplicationId: `${Date.now()}-${x}`,
         });
         sqs.send(sqsCommand).catch((err) => {
           // TODO: on error, delete the bad email
