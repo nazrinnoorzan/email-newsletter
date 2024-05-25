@@ -16,14 +16,15 @@ datasource db {
 }
 
 model Subscriber {
-    id         String   @id @default(cuid())
-    firstName  String?
-    lastName   String?
-    email      String   @unique
-    isDeactive Boolean  @default(false)
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
-    list       List[]
+    id          String   @id @default(cuid())
+    firstName   String?
+    lastName    String?
+    email       String   @unique
+    companyName String?
+    isDeactive  Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    list        List[]
 }
 
 model Segment {
