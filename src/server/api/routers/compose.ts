@@ -30,7 +30,7 @@ export const composeRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const sqsMessageGroupId = `${Date.now()}`;
-      const splittedArray = arrayChunkBySize(input.toAddress, 10);
+      const splittedArray = arrayChunkBySize(input.toAddress, 5);
 
       for (const arr of splittedArray) {
         const params: {
