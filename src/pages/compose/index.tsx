@@ -188,6 +188,11 @@ export default function Compose() {
                 ))}
               </select>
             </div>
+            {selectedListSusbcribers && (
+              <div className="pt-4 text-orange-600">
+                Total emails are {selectedListSusbcribers.list.length}.
+              </div>
+            )}
             <div className="mt-8 flex flex-col">
               <label htmlFor="toAddress">{`Send Preview Email (Only one email)`}</label>
               <input
