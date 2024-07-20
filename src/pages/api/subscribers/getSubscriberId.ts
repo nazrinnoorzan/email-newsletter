@@ -20,22 +20,22 @@ const getSubscriberId = async (
   }
 
   // Create context and caller
-  const ctx = await createTRPCContext({
-    req,
-    res,
-    info: {
-      isBatchCall: false,
-      calls: [],
-    },
-  });
-  const caller = createCaller(ctx);
+  // const ctx = await createTRPCContext({
+  //   req,
+  //   res,
+  //   info: {
+  //     isBatchCall: false,
+  //     calls: [],
+  //   },
+  // });
+  // const caller = createCaller(ctx);
 
   try {
     const { email } = req.body;
-    const user = await caller.subscriber.getSubscriberId({
-      email,
-    });
-    res.status(200).json({ isEmailExist: 1, memberId: user.id });
+    // const user = await caller.subscriber.getSubscriberId({
+    //   email,
+    // });
+    res.status(200).json({ isEmailExist: 1, memberId: email });
   } catch (cause) {
     console.error(cause);
     res.status(500).json({ isEmailExist: 0, memberId: null });
