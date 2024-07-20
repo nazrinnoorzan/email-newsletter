@@ -83,4 +83,15 @@ export const subscriberRouter = createTRPCRouter({
         },
       });
     }),
+  getSubscriberId: publicProcedure
+    .input(z.object({ email: z.string().email("This is not a valid email.") }))
+    .query(async ({ ctx, input }) => {
+      const subscriberData = await ctx.db.subscriber.findUniqueOrThrow({
+        where: {
+          email: input.email,
+        },
+      });
+
+      return subscriberData;
+    }),
 });
