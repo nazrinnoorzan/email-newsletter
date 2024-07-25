@@ -137,43 +137,8 @@ export const subscriberRouter = createTRPCRouter({
         });
       }
 
-      // // Add new segment if not exist and get segment id for addList
-      // const unknownSegment: string[] = [];
-      // const addListId: number[] = [];
-
-      // await Promise.all(
-      //   input.addList.map(async (segment) => {
-      //     const segmentData = await ctx.db.segment.findUnique({
-      //       where: {
-      //         name: segment,
-      //       },
-      //     });
-
-      //     if (!segmentData) {
-      //       unknownSegment.push(segment);
-      //     } else {
-      //       addListId.push(segmentData.id);
-      //     }
-      //   }),
-      // );
-
-      // if (unknownSegment.length > 0) {
-      //   await Promise.all(
-      //     unknownSegment.map(async (segment) => {
-      //       const segmentData = await ctx.db.segment.create({
-      //         data: {
-      //           name: segment,
-      //         },
-      //       });
-
-      //       addListId.push(segmentData.id);
-      //     }),
-      //   );
-      // }
-
       // Get segment id for removeList
       const removeListId: number[] = [];
-
       await Promise.all(
         input.removeList.map(async (segment) => {
           const segmentData = await ctx.db.segment.findUnique({
