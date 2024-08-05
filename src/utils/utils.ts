@@ -33,3 +33,19 @@ export const replacePlainTextSource = (plainTextSource: string) => {
 
   return plainText;
 };
+
+export const replaceEmailSubject = (
+  subject: string,
+  firstName: string | null,
+) => {
+  const subjectRegex = /(\*\|FNAME\|\*)/g;
+  let updatedSubject = "";
+  let processFirstName = firstName;
+
+  if (processFirstName === null || processFirstName === "-")
+    processFirstName = "";
+
+  updatedSubject = subject.replace(subjectRegex, processFirstName);
+
+  return updatedSubject;
+};

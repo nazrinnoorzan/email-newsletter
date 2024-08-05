@@ -7,6 +7,7 @@ import { z } from "zod";
 import { arrayChunkBySize } from "array-chunk-split";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { env } from "~/env";
+import { replaceEmailSubject } from "~/utils/utils";
 
 const sqs = new SQSClient({
   region: env.SES_REGION,
@@ -24,7 +25,12 @@ export const composeRouter = createTRPCRouter({
         bodyHtml: z.string(),
         bodyPlainText: z.string(),
         toAddress: z
-          .object({ emailAddress: z.string(), subscribeId: z.string() })
+          .object({
+            emailAddress: z.string(),
+            subscribeId: z.string(),
+            firstName: z.string().nullable(),
+            lastName: z.string().nullable(),
+          })
           .array(),
       }),
     )
@@ -44,12 +50,16 @@ export const composeRouter = createTRPCRouter({
         for (const message of arr) {
           const unsubscribeLinkHtml = `<div style="text-align: center;">Copyright (C) ${new Date().getFullYear()} All rights reserved. <a href="${env.NEXTAUTH_URL}/unsubscribe/${message.subscribeId}" target="_blank;">Unsubscribe</a></div>`;
           const unsubscribeTextHtml = `Copyright (C) ${new Date().getFullYear()} All rights reserved. You can unsubscribe here: ${env.NEXTAUTH_URL}/unsubscribe/${message.subscribeId}`;
+          const updatedSubject = replaceEmailSubject(
+            input.subject,
+            message.firstName,
+          );
 
           params.Entries.push({
             Id: `${Date.now()}-${message.subscribeId}`,
             MessageBody: JSON.stringify({
               to: [message.emailAddress],
-              subject: input.subject,
+              subject: updatedSubject,
               html: input.bodyHtml + unsubscribeLinkHtml,
               text: input.bodyPlainText + unsubscribeTextHtml,
             }),
@@ -65,32 +75,5 @@ export const composeRouter = createTRPCRouter({
           throw err;
         });
       }
-
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
-      // for (let x = 0; x < input.toAddress.length; x++) {
-      //   console.log(
-      //     `sending emails ${x + 1} of ${input.toAddress.length}. Email subject is ${input.subject}`,
-      //   );
-
-      //   const unsubscribeLinkHtml = `<div style="text-align: center;">Copyright (C) ${new Date().getFullYear()} All rights reserved. <a href="${env.NEXTAUTH_URL}/unsubscribe/${input.toAddress[x]!.subscribeId}" target="_blank;">Unsubscribe</a></div>`;
-      //   const unsubscribeTextHtml = `Copyright (C) ${new Date().getFullYear()} All rights reserved. You can unsubscribe here: ${env.NEXTAUTH_URL}/unsubscribe/${input.toAddress[x]!.subscribeId}`;
-
-      //   const sqsCommand = new SendMessageCommand({
-      //     QueueUrl: env.SQS_QUEUE_URL,
-      //     MessageBody: JSON.stringify({
-      //       to: [input.toAddress[x]!.emailAddress],
-      //       subject: input.subject,
-      //       html: input.bodyHtml + unsubscribeLinkHtml,
-      //       text: input.bodyPlainText + unsubscribeTextHtml,
-      //     }),
-      //     MessageGroupId: sqsMessageGroupId,
-      //     MessageDeduplicationId: `${Date.now()}-${x}`,
-      //   });
-      //   sqs.send(sqsCommand).catch((err) => {
-      //     // TODO: on error, delete the bad email
-      //     console.error(err);
-      //     throw err;
-      //   });
-      // }
     }),
 });

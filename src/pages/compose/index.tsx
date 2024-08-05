@@ -111,7 +111,12 @@ export default function Compose() {
 
     sendEmail.mutate({
       toAddress: [
-        { emailAddress: emailData.toAddress, subscribeId: "abcdefg" },
+        {
+          emailAddress: emailData.toAddress,
+          subscribeId: "abcdefg",
+          firstName: "firstName",
+          lastName: "lastName",
+        },
       ],
       subject: emailData.subject,
       bodyHtml: updatedBodyHtml,
@@ -133,6 +138,8 @@ export default function Compose() {
       .map((emailData) => ({
         emailAddress: emailData.subscriber.email,
         subscribeId: emailData.subscriber.id,
+        firstName: emailData.subscriber.firstName,
+        lastName: emailData.subscriber.lastName,
       }));
 
     setSendingEmail(true);
