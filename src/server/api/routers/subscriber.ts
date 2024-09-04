@@ -236,4 +236,10 @@ export const subscriberRouter = createTRPCRouter({
 
       return { code: 200, message: "New subscriber added!" };
     }),
+  getDeactive: protectedProcedure.query(({ ctx }) => {
+    return ctx.db.subscriber.findMany({
+      where: { isDeactive: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
 });

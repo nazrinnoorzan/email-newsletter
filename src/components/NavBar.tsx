@@ -76,6 +76,14 @@ export default function NavBar() {
                 Add Subscribers
               </Link>
             </li>
+            <li>
+              <Link
+                href="/deactivate"
+                className={isActive("/deactivate") ? "text-orange-600" : ""}
+              >
+                Deactivate List
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

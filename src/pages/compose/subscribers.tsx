@@ -118,7 +118,7 @@ export default function Subscribers() {
   return (
     <>
       <Head>
-        <title>Susbcribers List</title>
+        <title>Subscribers List</title>
       </Head>
       <NavBar />
       <main className="relative hidden min-h-screen flex-col items-center py-16 md:flex">
