@@ -2,13 +2,21 @@ import { useState, type ChangeEvent } from "react";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { toast } from "react-toastify";
+import DateTimePicker from "react-datetime-picker";
+import "react-datetime-picker/dist/DateTimePicker.css";
+import "react-calendar/dist/Calendar.css";
+import "react-clock/dist/Clock.css";
 
 import NavBar from "~/components/NavBar";
 import MobileView from "~/components/MobileView";
 import LoadingSpinner from "~/components/LoadingSpinner";
 
 import { api } from "~/utils/api";
-import { replaceEmailHtmlSource, replacePlainTextSource } from "~/utils/utils";
+import {
+  replaceEmailHtmlSource,
+  replacePlainTextSource,
+  convertToISOWithoutSeconds,
+} from "~/utils/utils";
 import { type SelectedListSusbcribers } from "~/pages/compose/subscribers";
 
 interface IEmailData {
@@ -17,6 +25,9 @@ interface IEmailData {
   bodyPlainText: string;
   toAddress: string;
 }
+
+type ValuePiece = Date | null;
+type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const defaultEmailData: IEmailData = {
   subject: "",
@@ -32,6 +43,8 @@ export default function Compose() {
   const [selectedList, setSelectedList] = useState("");
   const [selectedListSusbcribers, setSelectedListSusbcribers] =
     useState<SelectedListSusbcribers | null>(null);
+  const [isSchedule, setIsSchedule] = useState(false);
+  const [date, setDate] = useState<Value>(new Date());
 
   const { data: sessionData, status } = useSession();
   const { data: segmentList, isLoading: isSegmentListLoading } =
@@ -43,6 +56,7 @@ export default function Compose() {
       setSendingEmail(false);
     },
     onError(error) {
+      setSendingEmail(false);
       displayErrorToast("Filter subscribers by list failed!");
       console.error("Filter subscribers by list failed!", error);
     },
@@ -64,6 +78,7 @@ export default function Compose() {
       }
     },
     onError(error) {
+      setSendingEmail(false);
       displayErrorToast("Sending email failed!");
       console.error("Sending email failed!", error);
     },
@@ -71,13 +86,18 @@ export default function Compose() {
 
   const sendEventBridge = api.compose.sendEventBridge.useMutation({
     onSuccess(_data) {
-      displaySuccessToast("Sending scheduled emails success!");
+      displaySuccessToast(
+        `Sending scheduled emails at ${date as unknown as string} success!`,
+      );
       setSelectedList("");
       setSelectedListSusbcribers(null);
       setEmailData(defaultEmailData);
       setSendingEmail(false);
+      setIsSchedule(false);
+      setDate(new Date());
     },
     onError(error) {
+      setSendingEmail(false);
       displayErrorToast("Sending scheduled email failed!");
       console.error("Sending scheduled email failed!", error);
     },
@@ -175,7 +195,28 @@ export default function Compose() {
   const handleSendScheduledEmail = () => {
     setSendingEmail(true);
 
-    sendEventBridge.mutate();
+    const givenDate = new Date(date as Date);
+    const currentDate = new Date();
+    const oneHourLater = new Date(currentDate.getTime() + 60 * 60 * 1000);
+
+    // Check if the input date is at least one hour later than the current time
+    if (givenDate <= oneHourLater) {
+      displayErrorToast(
+        "The provided date must be at least one hour after the current time.",
+      );
+      setSendingEmail(false);
+      return;
+    }
+
+    const dateISO = convertToISOWithoutSeconds(date as Date);
+
+    if (!dateISO) {
+      displayErrorToast("Something is wrong in setting the calendar!");
+      setSendingEmail(false);
+      return;
+    }
+
+    sendEventBridge.mutate({ date: dateISO });
   };
 
   return (
@@ -242,15 +283,39 @@ export default function Compose() {
                 {sendingEmail && <LoadingSpinner />}
                 <span className="mx-2">Send Preview Email</span>
               </button>
-              <button
-                type="submit"
-                className="mt-4 rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
-                disabled={sendingEmail}
-                onClick={handleSendScheduledEmail}
-              >
-                {sendingEmail && <LoadingSpinner />}
-                <span className="mx-2">Send Test Schedule</span>
-              </button>
+              <div className="mt-4">
+                <label className="mr-1" htmlFor="isSchedule">
+                  Schedule email for later?
+                </label>
+                <input
+                  name="isSchedule"
+                  type="checkbox"
+                  checked={isSchedule}
+                  onChange={() => setIsSchedule(!isSchedule)}
+                />
+              </div>
+              {isSchedule && (
+                <>
+                  <div className="mt-4">
+                    <DateTimePicker
+                      className="custom-datetime"
+                      format="dd/MM/y h:mm a"
+                      minDate={new Date()}
+                      onChange={(value) => !sendingEmail && setDate(value)}
+                      value={date}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="mt-4 rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
+                    disabled={sendingEmail}
+                    onClick={handleSendScheduledEmail}
+                  >
+                    {sendingEmail && <LoadingSpinner />}
+                    <span className="mx-2">Send Test Schedule</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <div className="flex h-full w-full flex-col items-center p-4 lg:w-3/5">
@@ -291,7 +356,7 @@ export default function Compose() {
             <button
               type="submit"
               className="flex items-center justify-center rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
-              disabled={sendingEmail}
+              disabled={sendingEmail || isSchedule}
               onClick={handleSubmit}
             >
               {sendingEmail && <LoadingSpinner />}

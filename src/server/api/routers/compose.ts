@@ -91,30 +91,36 @@ export const composeRouter = createTRPCRouter({
         });
       }
     }),
-  sendEventBridge: protectedProcedure.mutation(async () => {
-    try {
-      const scheduleParams = {
-        Name: "MyOneTimeSchedule1", // Name of the schedule, must be unique
-        FlexibleTimeWindow: { Mode: FlexibleTimeWindowMode.OFF }, // No flexibility needed for a one-time schedule
-        ScheduleExpression: "at(2024-10-08T00:25:00)", // ISO 8601 time format for the specific date and time (UTC)
-        ScheduleExpressionTimezone: "Asia/Singapore",
-        Target: {
-          Arn: "arn:aws:lambda:ap-southeast-1:058264523057:function:testEventBridge", // Target Lambda function
-          RoleArn:
-            "arn:aws:iam::058264523057:role/Amazon_EventBridge_Scheduler_LAMBDA", // Role that allows the Scheduler to invoke the target
-          Input: JSON.stringify({ test: "hello world!" }), // Optional: Input passed to the Lambda function
-        },
-        State: ScheduleState.ENABLED,
-        ActionAfterCompletion: ActionAfterCompletion.DELETE,
-      };
+  sendEventBridge: protectedProcedure
+    .input(
+      z.object({
+        date: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const scheduleParams = {
+          Name: "MyOneTimeSchedule1", // Name of the schedule, must be unique
+          FlexibleTimeWindow: { Mode: FlexibleTimeWindowMode.OFF }, // No flexibility needed for a one-time schedule
+          ScheduleExpression: `at(${input.date})`, // ISO 8601 time format for the specific date and time
+          ScheduleExpressionTimezone: "Asia/Singapore",
+          Target: {
+            Arn: "arn:aws:lambda:ap-southeast-1:058264523057:function:testEventBridge", // Target Lambda function
+            RoleArn:
+              "arn:aws:iam::058264523057:role/Amazon_EventBridge_Scheduler_LAMBDA", // Role that allows the Scheduler to invoke the target
+            Input: JSON.stringify({ test: "hello world!" }), // Optional: Input passed to the Lambda function
+          },
+          State: ScheduleState.ENABLED,
+          ActionAfterCompletion: ActionAfterCompletion.DELETE,
+        };
 
-      const createScheduleCommand = new CreateScheduleCommand(scheduleParams);
-      const scheduleData = await schedulerClient.send(createScheduleCommand);
+        const createScheduleCommand = new CreateScheduleCommand(scheduleParams);
+        const scheduleData = await schedulerClient.send(createScheduleCommand);
 
-      console.log("Scheduler created successfully:", scheduleData);
-    } catch (err) {
-      console.error("Error creating scheduler:", err);
-      throw err;
-    }
-  }),
+        console.log("Scheduler created successfully:", scheduleData);
+      } catch (err) {
+        console.error("Error creating scheduler:", err);
+        throw err;
+      }
+    }),
 });
