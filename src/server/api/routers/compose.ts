@@ -3,6 +3,13 @@ import {
   SendMessageBatchCommand,
   type SendMessageBatchRequestEntry,
 } from "@aws-sdk/client-sqs";
+import {
+  SchedulerClient,
+  CreateScheduleCommand,
+  ScheduleState,
+  FlexibleTimeWindowMode,
+  ActionAfterCompletion,
+} from "@aws-sdk/client-scheduler";
 import { z } from "zod";
 import { arrayChunkBySize } from "array-chunk-split";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -10,6 +17,14 @@ import { env } from "~/env";
 import { replaceEmailSubject } from "~/utils/utils";
 
 const sqs = new SQSClient({
+  region: env.SES_REGION,
+  credentials: {
+    accessKeyId: env.SES_ACCESS_KEY,
+    secretAccessKey: env.SES_SECRET_KEY,
+  },
+});
+
+const schedulerClient = new SchedulerClient({
   region: env.SES_REGION,
   credentials: {
     accessKeyId: env.SES_ACCESS_KEY,
@@ -76,4 +91,30 @@ export const composeRouter = createTRPCRouter({
         });
       }
     }),
+  sendEventBridge: protectedProcedure.mutation(async () => {
+    try {
+      const scheduleParams = {
+        Name: "MyOneTimeSchedule1", // Name of the schedule, must be unique
+        FlexibleTimeWindow: { Mode: FlexibleTimeWindowMode.OFF }, // No flexibility needed for a one-time schedule
+        ScheduleExpression: "at(2024-10-08T00:25:00)", // ISO 8601 time format for the specific date and time (UTC)
+        ScheduleExpressionTimezone: "Asia/Singapore",
+        Target: {
+          Arn: "arn:aws:lambda:ap-southeast-1:058264523057:function:testEventBridge", // Target Lambda function
+          RoleArn:
+            "arn:aws:iam::058264523057:role/Amazon_EventBridge_Scheduler_LAMBDA", // Role that allows the Scheduler to invoke the target
+          Input: JSON.stringify({ test: "hello world!" }), // Optional: Input passed to the Lambda function
+        },
+        State: ScheduleState.ENABLED,
+        ActionAfterCompletion: ActionAfterCompletion.DELETE,
+      };
+
+      const createScheduleCommand = new CreateScheduleCommand(scheduleParams);
+      const scheduleData = await schedulerClient.send(createScheduleCommand);
+
+      console.log("Scheduler created successfully:", scheduleData);
+    } catch (err) {
+      console.error("Error creating scheduler:", err);
+      throw err;
+    }
+  }),
 });

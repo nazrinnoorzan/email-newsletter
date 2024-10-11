@@ -69,6 +69,20 @@ export default function Compose() {
     },
   });
 
+  const sendEventBridge = api.compose.sendEventBridge.useMutation({
+    onSuccess(_data) {
+      displaySuccessToast("Sending scheduled emails success!");
+      setSelectedList("");
+      setSelectedListSusbcribers(null);
+      setEmailData(defaultEmailData);
+      setSendingEmail(false);
+    },
+    onError(error) {
+      displayErrorToast("Sending scheduled email failed!");
+      console.error("Sending scheduled email failed!", error);
+    },
+  });
+
   if (status === "loading" || isSegmentListLoading) return <p>Loading...</p>;
   if (!sessionData) return <p>Access Denied</p>;
 
@@ -158,6 +172,12 @@ export default function Compose() {
     });
   };
 
+  const handleSendScheduledEmail = () => {
+    setSendingEmail(true);
+
+    sendEventBridge.mutate();
+  };
+
   return (
     <>
       <Head>
@@ -221,6 +241,15 @@ export default function Compose() {
               >
                 {sendingEmail && <LoadingSpinner />}
                 <span className="mx-2">Send Preview Email</span>
+              </button>
+              <button
+                type="submit"
+                className="mt-4 rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
+                disabled={sendingEmail}
+                onClick={handleSendScheduledEmail}
+              >
+                {sendingEmail && <LoadingSpinner />}
+                <span className="mx-2">Send Test Schedule</span>
               </button>
             </div>
           </div>
