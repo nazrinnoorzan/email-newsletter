@@ -36,6 +36,8 @@ export const env = createEnv({
     SES_EMAIL_RETURN: z.string(),
     SQS_QUEUE_URL: z.string(),
     X_API_KEY: z.string(),
+    SCHEDULE_LAMBDA: z.string(),
+    SCHEDULE_ROLE: z.string(),
   },
 
   /**
@@ -65,6 +67,8 @@ export const env = createEnv({
     SES_EMAIL_RETURN: process.env.SES_EMAIL_RETURN,
     SQS_QUEUE_URL: process.env.SQS_QUEUE_URL,
     X_API_KEY: process.env.X_API_KEY,
+    SCHEDULE_LAMBDA: process.env.SCHEDULE_LAMBDA,
+    SCHEDULE_ROLE: process.env.SCHEDULE_ROLE,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

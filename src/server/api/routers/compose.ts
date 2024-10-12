@@ -121,9 +121,8 @@ export const composeRouter = createTRPCRouter({
           ScheduleExpression: `at(${input.date})`, // ISO 8601 time format for the specific date and time
           ScheduleExpressionTimezone: "Asia/Singapore",
           Target: {
-            Arn: "arn:aws:lambda:ap-southeast-1:058264523057:function:testEventBridge", // Target Lambda function
-            RoleArn:
-              "arn:aws:iam::058264523057:role/Amazon_EventBridge_Scheduler_LAMBDA", // Role that allows the Scheduler to invoke the target
+            Arn: env.SCHEDULE_LAMBDA, // Target Lambda function
+            RoleArn: env.SCHEDULE_ROLE, // Role that allows the Scheduler to invoke the target
             Input: JSON.stringify({
               subject: input.subject,
               bodyHtml: input.bodyHtml,
