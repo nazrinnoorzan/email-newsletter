@@ -16,6 +16,7 @@ import {
   replaceEmailHtmlSource,
   replacePlainTextSource,
   convertToISOWithoutSeconds,
+  sanitizeStringWithUniqueId,
 } from "~/utils/utils";
 import { type SelectedListSusbcribers } from "~/pages/compose/subscribers";
 
@@ -184,39 +185,46 @@ export default function Compose() {
     );
     const updatedPlainText = replacePlainTextSource(emailData.bodyPlainText);
 
-    sendEmail.mutate({
-      toAddress: emailList,
-      subject: emailData.subject,
-      bodyHtml: updatedBodyHtml,
-      bodyPlainText: updatedPlainText,
-    });
-  };
+    if (isSchedule) {
+      const givenDate = new Date(date as Date);
+      const currentDate = new Date();
+      const oneHourLater = new Date(currentDate.getTime() + 60 * 60 * 1000);
 
-  const handleSendScheduledEmail = () => {
-    setSendingEmail(true);
+      // Check if the input date is at least one hour later than the current time
+      // if (givenDate <= oneHourLater) {
+      //   displayErrorToast(
+      //     "The provided date must be at least one hour after the current time.",
+      //   );
+      //   setSendingEmail(false);
+      //   return;
+      // }
 
-    const givenDate = new Date(date as Date);
-    const currentDate = new Date();
-    const oneHourLater = new Date(currentDate.getTime() + 60 * 60 * 1000);
+      const dateISO = convertToISOWithoutSeconds(date as Date);
 
-    // Check if the input date is at least one hour later than the current time
-    if (givenDate <= oneHourLater) {
-      displayErrorToast(
-        "The provided date must be at least one hour after the current time.",
-      );
-      setSendingEmail(false);
-      return;
+      if (!dateISO) {
+        displayErrorToast("Something is wrong in setting the calendar!");
+        setSendingEmail(false);
+        return;
+      }
+
+      const scheduleName = sanitizeStringWithUniqueId(emailData.subject);
+
+      sendEventBridge.mutate({
+        date: dateISO,
+        scheduleName,
+        toAddress: emailList,
+        subject: emailData.subject,
+        bodyHtml: updatedBodyHtml,
+        bodyPlainText: updatedPlainText,
+      });
+    } else {
+      sendEmail.mutate({
+        toAddress: emailList,
+        subject: emailData.subject,
+        bodyHtml: updatedBodyHtml,
+        bodyPlainText: updatedPlainText,
+      });
     }
-
-    const dateISO = convertToISOWithoutSeconds(date as Date);
-
-    if (!dateISO) {
-      displayErrorToast("Something is wrong in setting the calendar!");
-      setSendingEmail(false);
-      return;
-    }
-
-    sendEventBridge.mutate({ date: dateISO });
   };
 
   return (
@@ -309,10 +317,10 @@ export default function Compose() {
                     type="submit"
                     className="mt-4 rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
                     disabled={sendingEmail}
-                    onClick={handleSendScheduledEmail}
+                    onClick={handleSubmit}
                   >
                     {sendingEmail && <LoadingSpinner />}
-                    <span className="mx-2">Send Test Schedule</span>
+                    <span className="mx-2">Send Schedule Email</span>
                   </button>
                 </>
               )}
