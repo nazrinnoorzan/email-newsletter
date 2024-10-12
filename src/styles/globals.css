@@ -25,4 +25,27 @@
   tbody tr {
     @apply bg-gray-600 hover:bg-gray-300;
   }
+
+  .custom-datetime .react-datetime-picker__button svg {
+    stroke: white;
+  }
+  .custom-datetime .react-datetime-picker__wrapper {
+    @apply rounded-lg border-2 border-transparent bg-orange-600 p-2;
+  }
+  .custom-datetime .react-datetime-picker__calendar .react-calendar {
+    @apply mt-1 bg-black;
+  }
+  .custom-datetime .react-datetime-picker__inputGroup__input option {
+    @apply text-black;
+  }
+  .custom-datetime .react-calendar__tile:disabled,
+  .custom-datetime .react-calendar__navigation button:disabled {
+    @apply bg-transparent;
+  }
+  .custom-datetime .react-calendar__tile--now {
+    @apply bg-slate-500;
+  }
+  .custom-datetime .react-calendar__tile--active {
+    @apply bg-orange-600;
+  }
 }

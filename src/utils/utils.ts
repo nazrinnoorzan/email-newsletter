@@ -49,3 +49,40 @@ export const replaceEmailSubject = (
 
   return updatedSubject;
 };
+
+export const convertToISOWithoutSeconds = (dateString: Date | null) => {
+  if (!dateString) return "";
+
+  // Create a new Date object from the input string
+  const date = new Date(dateString);
+
+  // Extract the year, month, day, hours, and minutes
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  // Construct the ISO string without seconds
+  return `${year}-${month}-${day}T${hours}:${minutes}:00`;
+};
+
+export const sanitizeStringWithUniqueId = (input: string) => {
+  // Sanitize the input string
+  let sanitized = input
+    .replace(/[^a-zA-Z0-9\-\._\s]/g, "") // Remove all disallowed characters
+    .replace(/\s+/g, "_"); // Replace spaces with underscores
+
+  // Generate an 8-character random alphanumeric string
+  const randomString = Math.random().toString(36).substring(2, 10);
+
+  // Ensure the total length is less than or equal to 64 characters
+  // Leave space for the random string (8 characters + 1 for underscore = 9 characters)
+  const maxSanitizedLength = 64 - randomString.length - 1; // -1 for the underscore
+  if (sanitized.length > maxSanitizedLength) {
+    sanitized = sanitized.substring(0, maxSanitizedLength);
+  }
+
+  // Return the sanitized string with the random suffix
+  return `${sanitized}_${randomString}`;
+};
