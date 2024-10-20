@@ -41,3 +41,14 @@ model List {
 
     @@id([subscriberId, segmentId])
 }
+
+model MailRecord {
+    id             String   @id @default(uuid())
+    s3Key          String   @unique
+    segmentList    Json
+    totalEmailSent Int
+    scheduleKey    String?  @unique
+    scheduleDate   String?
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+}

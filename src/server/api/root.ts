@@ -3,6 +3,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { subscriberRouter } from "~/server/api/routers/subscriber";
 import { segmentRouter } from "./routers/segment";
 import { composeRouter } from "./routers/compose";
+import { mailRouter } from "./routers/mail";
 
 /**
  * This is the primary router for your server.
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   subscriber: subscriberRouter,
   segment: segmentRouter,
   compose: composeRouter,
+  mail: mailRouter,
 });
 
 // export type definition of API

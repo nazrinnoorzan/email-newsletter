@@ -16,7 +16,6 @@ import {
   replaceEmailHtmlSource,
   replacePlainTextSource,
   convertToISOWithoutSeconds,
-  sanitizeStringWithUniqueId,
 } from "~/utils/utils";
 import { type SelectedListSusbcribers } from "~/pages/compose/subscribers";
 
@@ -42,6 +41,7 @@ export default function Compose() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
   const [selectedList, setSelectedList] = useState("");
+  const [selectedName, setSelectedName] = useState("");
   const [selectedListSusbcribers, setSelectedListSusbcribers] =
     useState<SelectedListSusbcribers | null>(null);
   const [isSchedule, setIsSchedule] = useState(false);
@@ -73,6 +73,7 @@ export default function Compose() {
       } else {
         displaySuccessToast("Sending all emails success!");
         setSelectedList("");
+        setSelectedName("");
         setSelectedListSusbcribers(null);
         setEmailData(defaultEmailData);
         setSendingEmail(false);
@@ -91,6 +92,7 @@ export default function Compose() {
         `Sending scheduled emails at ${date as unknown as string} success!`,
       );
       setSelectedList("");
+      setSelectedName("");
       setSelectedListSusbcribers(null);
       setEmailData(defaultEmailData);
       setSendingEmail(false);
@@ -101,6 +103,14 @@ export default function Compose() {
       setSendingEmail(false);
       displayErrorToast("Sending scheduled email failed!");
       console.error("Sending scheduled email failed!", error);
+    },
+  });
+
+  const saveMail = api.mail.save.useMutation({
+    onError(error) {
+      setSendingEmail(false);
+      displayErrorToast("Failed to upload to S3!");
+      console.error("Failed to upload to S3!", error);
     },
   });
 
@@ -116,7 +126,10 @@ export default function Compose() {
   };
 
   const selectedListHandler = (e: ChangeEvent<HTMLSelectElement>) => {
+    const listName = e.target.options[e.target.selectedIndex]?.text ?? "";
+
     setSelectedList(e.target.value);
+    setSelectedName(listName);
 
     if (e.target.value) {
       setSendingEmail(true);
@@ -159,7 +172,7 @@ export default function Compose() {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (
       !selectedListSusbcribers ||
       !emailData.subject ||
@@ -184,34 +197,55 @@ export default function Compose() {
       emailData.subject,
     );
     const updatedPlainText = replacePlainTextSource(emailData.bodyPlainText);
+    let dateISO = "";
 
     if (isSchedule) {
       const givenDate = new Date(date as Date);
       const currentDate = new Date();
-      const oneHourLater = new Date(currentDate.getTime() + 60 * 60 * 1000);
+      const thirtyMinutesLater = new Date(
+        currentDate.getTime() + 30 * 60 * 1000,
+      );
 
-      // Check if the input date is at least one hour later than the current time
-      // if (givenDate <= oneHourLater) {
-      //   displayErrorToast(
-      //     "The provided date must be at least one hour after the current time.",
-      //   );
-      //   setSendingEmail(false);
-      //   return;
-      // }
+      // Check if the input date is at least 30 minutes later than the current time
+      if (givenDate <= thirtyMinutesLater) {
+        displayErrorToast(
+          "The provided date must be at least one hour after the current time.",
+        );
+        setSendingEmail(false);
+        return;
+      }
 
-      const dateISO = convertToISOWithoutSeconds(date as Date);
+      dateISO = convertToISOWithoutSeconds(date as Date);
 
       if (!dateISO) {
         displayErrorToast("Something is wrong in setting the calendar!");
         setSendingEmail(false);
         return;
       }
+    }
 
-      const scheduleName = sanitizeStringWithUniqueId(emailData.subject);
+    const s3Key = await saveMail.mutateAsync({
+      segmentName: selectedName,
+      subscriberCount: selectedListSusbcribers.list.length,
+      scheduleTime: dateISO,
+      toAddress: emailList,
+      subject: emailData.subject,
+      bodyHtml: updatedBodyHtml,
+      bodyPlainText: updatedPlainText,
+    });
 
+    console.log("s3Key", s3Key);
+
+    if (!s3Key) {
+      displayErrorToast("Failed to save data to s3!");
+      setSendingEmail(false);
+      return;
+    }
+
+    if (isSchedule) {
       sendEventBridge.mutate({
         date: dateISO,
-        scheduleName,
+        scheduleName: s3Key,
         toAddress: emailList,
         subject: emailData.subject,
         bodyHtml: updatedBodyHtml,

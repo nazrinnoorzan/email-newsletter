@@ -38,6 +38,7 @@ export const env = createEnv({
     X_API_KEY: z.string(),
     SCHEDULE_LAMBDA: z.string(),
     SCHEDULE_ROLE: z.string(),
+    S3_BUCKET_NAME: z.string(),
   },
 
   /**
@@ -69,6 +70,7 @@ export const env = createEnv({
     X_API_KEY: process.env.X_API_KEY,
     SCHEDULE_LAMBDA: process.env.SCHEDULE_LAMBDA,
     SCHEDULE_ROLE: process.env.SCHEDULE_ROLE,
+    S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
