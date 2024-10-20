@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^1.4.0",
+    "@aws-sdk/client-s3": "^3.670.0",
     "@aws-sdk/client-scheduler": "^3.665.0",
     "@aws-sdk/client-sqs": "^3.575.0",
     "@prisma/client": "^5.10.2",

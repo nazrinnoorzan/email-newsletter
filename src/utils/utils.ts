@@ -73,16 +73,16 @@ export const sanitizeStringWithUniqueId = (input: string) => {
     .replace(/[^a-zA-Z0-9\-\._\s]/g, "") // Remove all disallowed characters
     .replace(/\s+/g, "_"); // Replace spaces with underscores
 
-  // Generate an 8-character random alphanumeric string
-  const randomString = Math.random().toString(36).substring(2, 10);
+  // Get the current timestamp
+  const timestamp = Date.now().toString();
 
   // Ensure the total length is less than or equal to 64 characters
-  // Leave space for the random string (8 characters + 1 for underscore = 9 characters)
-  const maxSanitizedLength = 64 - randomString.length - 1; // -1 for the underscore
+  // Leave space for the timestamp (length of timestamp + 1 for underscore)
+  const maxSanitizedLength = 64 - timestamp.length - 1; // -1 for the underscore
   if (sanitized.length > maxSanitizedLength) {
     sanitized = sanitized.substring(0, maxSanitizedLength);
   }
 
-  // Return the sanitized string with the random suffix
-  return `${sanitized}_${randomString}`;
+  // Return the sanitized string with the timestamp suffix
+  return `${sanitized}_${timestamp}`;
 };
