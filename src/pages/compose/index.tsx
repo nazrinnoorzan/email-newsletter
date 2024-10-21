@@ -106,7 +106,7 @@ export default function Compose() {
     },
   });
 
-  const saveMail = api.mail.save.useMutation({
+  const saveCampaign = api.campaign.save.useMutation({
     onError(error) {
       setSendingEmail(false);
       displayErrorToast("Failed to upload to S3!");
@@ -224,7 +224,7 @@ export default function Compose() {
       }
     }
 
-    const s3Key = await saveMail.mutateAsync({
+    const s3Key = await saveCampaign.mutateAsync({
       segmentName: selectedName,
       subscriberCount: selectedListSusbcribers.list.length,
       scheduleTime: dateISO,
@@ -233,8 +233,6 @@ export default function Compose() {
       bodyHtml: updatedBodyHtml,
       bodyPlainText: updatedPlainText,
     });
-
-    console.log("s3Key", s3Key);
 
     if (!s3Key) {
       displayErrorToast("Failed to save data to s3!");

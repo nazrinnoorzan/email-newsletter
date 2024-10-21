@@ -12,7 +12,7 @@ const s3Client = new S3Client({
   },
 });
 
-export const mailRouter = createTRPCRouter({
+export const campaignRouter = createTRPCRouter({
   save: protectedProcedure
     .input(
       z.object({
@@ -48,7 +48,7 @@ export const mailRouter = createTRPCRouter({
         const data = await s3Client.send(new PutObjectCommand(params));
         console.log("Success, JSON uploaded:", data);
 
-        await ctx.db.mailRecord.create({
+        await ctx.db.campaign.create({
           data: {
             s3Key: sanitizedSubject,
             segmentList: [input.segmentName],
