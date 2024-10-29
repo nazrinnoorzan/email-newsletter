@@ -1,10 +1,8 @@
 import {
-  SQSClient,
   SendMessageBatchCommand,
   type SendMessageBatchRequestEntry,
 } from "@aws-sdk/client-sqs";
 import {
-  SchedulerClient,
   CreateScheduleCommand,
   ScheduleState,
   FlexibleTimeWindowMode,
@@ -19,22 +17,7 @@ import {
 } from "~/server/api/trpc";
 import { env } from "~/env";
 import { replaceEmailSubject } from "~/utils/utils";
-
-const sqs = new SQSClient({
-  region: env.SES_REGION,
-  credentials: {
-    accessKeyId: env.SES_ACCESS_KEY,
-    secretAccessKey: env.SES_SECRET_KEY,
-  },
-});
-
-const schedulerClient = new SchedulerClient({
-  region: env.SES_REGION,
-  credentials: {
-    accessKeyId: env.SES_ACCESS_KEY,
-    secretAccessKey: env.SES_SECRET_KEY,
-  },
-});
+import { sqs, schedulerClient } from "~/server/aws";
 
 export const composeRouter = createTRPCRouter({
   sendEmail: publicProcedure

@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from "react";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
@@ -16,6 +17,7 @@ import {
   replaceEmailHtmlSource,
   replacePlainTextSource,
   convertToISOWithoutSeconds,
+  CAMPAIGN_STATUS,
 } from "~/utils/utils";
 import { type SelectedListSusbcribers } from "~/pages/compose/subscribers";
 
@@ -47,6 +49,7 @@ export default function Compose() {
   const [isSchedule, setIsSchedule] = useState(false);
   const [date, setDate] = useState<Value>(new Date());
 
+  const router = useRouter();
   const { data: sessionData, status } = useSession();
   const { data: segmentList, isLoading: isSegmentListLoading } =
     api.segment.getAll.useQuery();
@@ -209,7 +212,7 @@ export default function Compose() {
       // Check if the input date is at least 30 minutes later than the current time
       if (givenDate <= thirtyMinutesLater) {
         displayErrorToast(
-          "The provided date must be at least one hour after the current time.",
+          "The provided date must be at least 30 minutes after the current time.",
         );
         setSendingEmail(false);
         return;
@@ -226,6 +229,7 @@ export default function Compose() {
 
     const s3Key = await saveCampaign.mutateAsync({
       segmentName: selectedName,
+      status: CAMPAIGN_STATUS.SENT,
       subscriberCount: selectedListSusbcribers.list.length,
       scheduleTime: dateISO,
       toAddress: emailList,
@@ -257,6 +261,48 @@ export default function Compose() {
         bodyPlainText: updatedPlainText,
       });
     }
+  };
+
+  const handleDraftSubmit = async () => {
+    if (!emailData.subject || !emailData.bodyHtml || !emailData.bodyPlainText)
+      return;
+
+    const emailList = selectedListSusbcribers?.list
+      .filter((subscriber) => subscriber.subscriber.isDeactive === false)
+      .map((emailData) => ({
+        emailAddress: emailData.subscriber.email,
+        subscribeId: emailData.subscriber.id,
+        firstName: emailData.subscriber.firstName,
+        lastName: emailData.subscriber.lastName,
+      }));
+
+    setSendingEmail(true);
+
+    const updatedBodyHtml = replaceEmailHtmlSource(
+      emailData.bodyHtml,
+      emailData.subject,
+    );
+    const updatedPlainText = replacePlainTextSource(emailData.bodyPlainText);
+
+    const s3Key = await saveCampaign.mutateAsync({
+      segmentName: selectedName,
+      status: CAMPAIGN_STATUS.DRAFT,
+      subscriberCount: selectedListSusbcribers?.list.length ?? 0,
+      scheduleTime: "",
+      toAddress: emailList ?? [],
+      subject: emailData.subject,
+      bodyHtml: updatedBodyHtml,
+      bodyPlainText: updatedPlainText,
+    });
+
+    if (!s3Key) {
+      displayErrorToast("Failed to save data to s3!");
+      setSendingEmail(false);
+      return;
+    }
+
+    displaySuccessToast(`Draft successfully saved!`);
+    await router.push("/campaigns");
   };
 
   return (
@@ -322,6 +368,15 @@ export default function Compose() {
               >
                 {sendingEmail && <LoadingSpinner />}
                 <span className="mx-2">Send Preview Email</span>
+              </button>
+              <button
+                type="submit"
+                className="mt-4 rounded-lg bg-orange-600 p-4 text-center text-sm font-medium text-white focus:outline-none"
+                disabled={sendingEmail}
+                onClick={handleDraftSubmit}
+              >
+                {sendingEmail && <LoadingSpinner />}
+                <span className="mx-2">Save Email As Draft</span>
               </button>
               <div className="mt-4">
                 <label className="mr-1" htmlFor="isSchedule">

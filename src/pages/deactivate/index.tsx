@@ -9,22 +9,6 @@ import NavBar from "~/components/NavBar";
 import SubscribersTable from "~/components/SubscribersTable";
 import MobileView from "~/components/MobileView";
 
-export interface SelectedListSusbcribers {
-  id: number;
-  name: string;
-  list: {
-    subscriber: {
-      id: string;
-      firstName: string | null;
-      lastName: string | null;
-      email: string;
-      isDeactive: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-    };
-  }[];
-}
-
 export default function Deactivate() {
   const { data: sessionData, status } = useSession();
   const { data: unsubscriberList, isLoading } =
