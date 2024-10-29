@@ -78,6 +78,14 @@ export default function NavBar() {
             </li>
             <li>
               <Link
+                href="/campaigns"
+                className={isActive("/campaigns") ? "text-orange-600" : ""}
+              >
+                Campaigns
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/deactivate"
                 className={isActive("/deactivate") ? "text-orange-600" : ""}
               >

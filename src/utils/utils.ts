@@ -1,3 +1,9 @@
+export enum CAMPAIGN_STATUS {
+  SENT = "sent",
+  DRAFT = "draft",
+  SCHEDULED = "scheduled",
+}
+
 export const emailIsValid = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
