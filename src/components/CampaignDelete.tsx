@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
+
+import { isDateInFuture } from "~/utils/utils";
 
 interface CampaignDeleteProps {
   id: string;
   s3Key: string;
   scheduleDate: string | null;
+  isShowEditBtn: boolean;
   onDelete: (id: string, s3Key: string, isScheduled: boolean) => void;
 }
 
@@ -11,9 +15,12 @@ export default function CampaignDelete({
   id,
   s3Key,
   scheduleDate,
+  isShowEditBtn,
   onDelete,
 }: CampaignDeleteProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const router = useRouter();
 
   const handleDelete = () => {
     setIsDeleting(true);
@@ -21,31 +28,37 @@ export default function CampaignDelete({
     let isDeleteScheduled = false;
 
     if (scheduleDate) {
-      const targetDate = new Date(scheduleDate);
-
-      // Get the current time in Malaysia (UTC+8)
-      const currentDateMalaysia = new Date().toLocaleString("en-US", {
-        timeZone: "Asia/Kuala_Lumpur",
-      });
-      const currentDate = new Date(currentDateMalaysia);
-
-      if (targetDate > currentDate) {
-        isDeleteScheduled = true;
-      }
+      isDeleteScheduled = isDateInFuture(scheduleDate);
     }
 
     onDelete(id, s3Key, isDeleteScheduled);
     setIsDeleting(false);
   };
 
+  const handleEdit = async () => {
+    await router.push(`/campaigns/edit/${id}`);
+  };
+
   return (
-    <button
-      type="submit"
-      onClick={handleDelete}
-      className="rounded-lg bg-red-600 px-6 py-4 text-center text-sm font-medium text-white focus:outline-none"
-      disabled={isDeleting}
-    >
-      {isDeleting ? "Deleting..." : "Delete"}
-    </button>
+    <div className="flex items-center gap-4">
+      {isShowEditBtn && (
+        <button
+          type="submit"
+          onClick={handleEdit}
+          className="rounded-lg bg-green-600 px-6 py-4 text-center text-sm font-medium text-white focus:outline-none"
+          disabled={isDeleting}
+        >
+          Edit
+        </button>
+      )}
+      <button
+        type="submit"
+        onClick={handleDelete}
+        className="rounded-lg bg-red-600 px-6 py-4 text-center text-sm font-medium text-white focus:outline-none"
+        disabled={isDeleting}
+      >
+        {isDeleting ? "Deleting..." : "Delete"}
+      </button>
+    </div>
   );
 }
