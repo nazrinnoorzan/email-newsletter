@@ -21,7 +21,7 @@ import {
 } from "~/utils/utils";
 import { type SelectedListSusbcribers } from "~/pages/compose/subscribers";
 
-interface IEmailData {
+export interface IEmailData {
   subject: string;
   bodyHtml: string;
   bodyPlainText: string;
@@ -29,9 +29,9 @@ interface IEmailData {
 }
 
 type ValuePiece = Date | null;
-type Value = ValuePiece | [ValuePiece, ValuePiece];
+export type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-const defaultEmailData: IEmailData = {
+export const defaultEmailData: IEmailData = {
   subject: "",
   bodyHtml: "",
   bodyPlainText: "",
