@@ -92,3 +92,19 @@ export const sanitizeStringWithUniqueId = (input: string) => {
   // Return the sanitized string with the timestamp suffix
   return `${sanitized}_${timestamp}`;
 };
+
+export const isDateInFuture = (scheduledDate: string) => {
+  const targetDate = new Date(scheduledDate);
+
+  // Get the current time in Malaysia (UTC+8)
+  const currentDateMalaysia = new Date().toLocaleString("en-US", {
+    timeZone: "Asia/Kuala_Lumpur",
+  });
+  const currentDate = new Date(currentDateMalaysia);
+
+  if (targetDate > currentDate) {
+    return true;
+  } else {
+    return false;
+  }
+};

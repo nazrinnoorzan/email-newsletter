@@ -6,6 +6,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
+import { CAMPAIGN_STATUS, isDateInFuture } from "~/utils/utils";
 import CampaignDelete from "~/components/CampaignDelete";
 
 type Campaign = {
@@ -33,7 +34,18 @@ export default function CampaignTable({ data, onDelete }: CampaignTableProps) {
     }),
     columnHelper.accessor("status", {
       header: () => "Status",
-      cell: (info) => info.getValue(),
+      cell: (info) => {
+        const { scheduleDate } = info.row.original;
+        if (!scheduleDate) return info.getValue();
+
+        const isStillScheduled = isDateInFuture(scheduleDate);
+
+        if (isStillScheduled) {
+          return info.getValue();
+        } else {
+          return CAMPAIGN_STATUS.SENT;
+        }
+      },
     }),
     columnHelper.accessor("segmentList", {
       header: () => "Audience",
@@ -47,12 +59,23 @@ export default function CampaignTable({ data, onDelete }: CampaignTableProps) {
       id: "actions",
       header: () => "Actions",
       cell: (info) => {
-        const { id, s3Key, scheduleDate } = info.row.original;
+        const { id, s3Key, scheduleDate, status } = info.row.original;
+        let isShowEditBtn = false;
+        let isStillScheduled = false;
+
+        if (scheduleDate) {
+          isStillScheduled = isDateInFuture(scheduleDate);
+        }
+
+        if (status === (CAMPAIGN_STATUS.DRAFT as string) || isStillScheduled)
+          isShowEditBtn = true;
+
         return (
           <CampaignDelete
             id={id}
             s3Key={s3Key}
             scheduleDate={scheduleDate}
+            isShowEditBtn={isShowEditBtn}
             onDelete={onDelete}
           />
         );
@@ -88,7 +111,7 @@ export default function CampaignTable({ data, onDelete }: CampaignTableProps) {
         {table.getRowModel().rows.map((row) => (
           <tr key={row.id}>
             {row.getVisibleCells().map((cell) => (
-              <td key={cell.id}>
+              <td key={cell.id} className="capitalize">
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </td>
             ))}
