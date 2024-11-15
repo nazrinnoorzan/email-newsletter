@@ -164,4 +164,66 @@ export const campaignRouter = createTRPCRouter({
         throw err;
       }
     }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        campaignId: z.string(),
+        s3key: z.string(),
+        segmentName: z.string(),
+        subscriberCount: z.number(),
+        status: z.nativeEnum(CAMPAIGN_STATUS),
+        scheduleTime: z.string(),
+        subject: z.string(),
+        bodyHtml: z.string(),
+        bodyPlainText: z.string(),
+        toAddress: z
+          .object({
+            emailAddress: z.string(),
+            subscribeId: z.string(),
+            firstName: z.string().nullable(),
+            lastName: z.string().nullable(),
+          })
+          .array(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const key = `${input.s3key}.json`;
+        const inputToJSON = JSON.stringify(input);
+
+        const params = {
+          Bucket: env.S3_BUCKET_NAME,
+          Key: key,
+          Body: inputToJSON,
+          ContentType: "application/json",
+        };
+
+        const data = await s3Client.send(new PutObjectCommand(params));
+        console.log("Success, JSON updated:", data);
+
+        let campaignStatus = CAMPAIGN_STATUS.SENT;
+        if (input.scheduleTime) {
+          campaignStatus = CAMPAIGN_STATUS.SCHEDULED;
+        } else if (input.status === CAMPAIGN_STATUS.DRAFT) {
+          campaignStatus = CAMPAIGN_STATUS.DRAFT;
+        }
+
+        await ctx.db.campaign.update({
+          where: { id: input.campaignId },
+          data: {
+            title: input.subject,
+            status: campaignStatus,
+            segmentList: [input.segmentName],
+            totalEmailSent: input.subscriberCount,
+            scheduleKey: input.scheduleTime ? input.s3key : null,
+            scheduleDate: input.scheduleTime ? input.scheduleTime : null,
+          },
+        });
+
+        return input.s3key;
+      } catch (err) {
+        console.error("Error updating JSON:", err);
+        throw err;
+      }
+    }),
 });

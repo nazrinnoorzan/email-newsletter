@@ -43,6 +43,10 @@ export default function EditCampaign() {
     useState<SelectedListSusbcribers | null>(null);
   const [isSchedule, setIsSchedule] = useState(false);
   const [date, setDate] = useState<Value>(new Date());
+  const [uploadedS3Key, setUploadedS3Key] = useState("");
+  const [currentScheduleKey, setCurrentScheduleKey] = useState<string | null>(
+    null,
+  );
 
   const router = useRouter();
   const { data: sessionData, status } = useSession();
@@ -50,9 +54,14 @@ export default function EditCampaign() {
     api.segment.getAll.useQuery();
 
   const getCampaignData = api.campaign.find.useMutation({
-    onSuccess(data) {
+    async onSuccess(data) {
+      if (data.status === CAMPAIGN_STATUS.SENT) {
+        await router.push("/compose");
+      }
+
       setSelectedList(data.segmentId);
       setSelectedName(data.segmentName);
+      setCurrentScheduleKey(data.scheduleKey ?? null);
 
       if (data.segmentId) {
         setSendingEmail(true);
@@ -76,6 +85,7 @@ export default function EditCampaign() {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         bodyPlainText: (s3Data?.bodyPlainText as string) ?? "",
       }));
+      setUploadedS3Key(data?.s3Key ?? "");
     },
     onError(error) {
       displayErrorToast("Error find campaign data!");
@@ -102,14 +112,24 @@ export default function EditCampaign() {
         setEmailData({ ...emailData, toAddress: "" });
         setIsSendingTestEmail(false);
         setSendingEmail(false);
-      } else {
-        displaySuccessToast("Sending all emails success!");
-        setSelectedList("");
-        setSelectedName("");
-        setSelectedListSusbcribers(null);
-        setEmailData(defaultEmailData);
-        setSendingEmail(false);
       }
+    },
+    onError(error) {
+      setSendingEmail(false);
+      displayErrorToast("Sending test email failed!");
+      console.error("Sending test email failed!", error);
+    },
+  });
+
+  const sendEditedEmail = api.compose.sendEditedEmail.useMutation({
+    async onSuccess(_data) {
+      displaySuccessToast("Sending all emails success!");
+      setSelectedList("");
+      setSelectedName("");
+      setSelectedListSusbcribers(null);
+      setEmailData(defaultEmailData);
+      setSendingEmail(false);
+      await router.push("/compose");
     },
     onError(error) {
       setSendingEmail(false);
@@ -118,8 +138,8 @@ export default function EditCampaign() {
     },
   });
 
-  const sendEventBridge = api.compose.sendEventBridge.useMutation({
-    onSuccess(_data) {
+  const updateEventBridge = api.compose.updateEventBridge.useMutation({
+    async onSuccess(_data) {
       displaySuccessToast(
         `Sending scheduled emails at ${date as unknown as string} success!`,
       );
@@ -130,6 +150,7 @@ export default function EditCampaign() {
       setSendingEmail(false);
       setIsSchedule(false);
       setDate(new Date());
+      await router.push("/campaigns");
     },
     onError(error) {
       setSendingEmail(false);
@@ -138,11 +159,11 @@ export default function EditCampaign() {
     },
   });
 
-  const saveCampaign = api.campaign.save.useMutation({
+  const updateCampaign = api.campaign.update.useMutation({
     onError(error) {
       setSendingEmail(false);
-      displayErrorToast("Failed to upload to S3!");
-      console.error("Failed to upload to S3!", error);
+      displayErrorToast("Failed to update S3!");
+      console.error("Failed to update S3!", error);
     },
   });
 
@@ -208,7 +229,10 @@ export default function EditCampaign() {
       !selectedListSusbcribers ||
       !emailData.subject ||
       !emailData.bodyHtml ||
-      !emailData.bodyPlainText
+      !emailData.bodyPlainText ||
+      !router.query.campaignId ||
+      Array.isArray(router.query.campaignId) ||
+      !uploadedS3Key
     )
       return;
 
@@ -255,7 +279,9 @@ export default function EditCampaign() {
       }
     }
 
-    const s3Key = await saveCampaign.mutateAsync({
+    const s3Key = await updateCampaign.mutateAsync({
+      campaignId: router.query.campaignId,
+      s3key: uploadedS3Key,
       segmentName: selectedName,
       status: CAMPAIGN_STATUS.SENT,
       subscriberCount: selectedListSusbcribers.list.length,
@@ -266,14 +292,8 @@ export default function EditCampaign() {
       bodyPlainText: updatedPlainText,
     });
 
-    if (!s3Key) {
-      displayErrorToast("Failed to save data to s3!");
-      setSendingEmail(false);
-      return;
-    }
-
     if (isSchedule) {
-      sendEventBridge.mutate({
+      updateEventBridge.mutate({
         date: dateISO,
         scheduleName: s3Key,
         toAddress: emailList,
@@ -282,7 +302,9 @@ export default function EditCampaign() {
         bodyPlainText: updatedPlainText,
       });
     } else {
-      sendEmail.mutate({
+      sendEditedEmail.mutate({
+        isRemoveScheduler: currentScheduleKey ? true : false,
+        schedulerName: s3Key,
         toAddress: emailList,
         subject: emailData.subject,
         bodyHtml: updatedBodyHtml,
@@ -292,7 +314,14 @@ export default function EditCampaign() {
   };
 
   const handleDraftSubmit = async () => {
-    if (!emailData.subject || !emailData.bodyHtml || !emailData.bodyPlainText)
+    if (
+      !emailData.subject ||
+      !emailData.bodyHtml ||
+      !emailData.bodyPlainText ||
+      !router.query.campaignId ||
+      Array.isArray(router.query.campaignId) ||
+      !uploadedS3Key
+    )
       return;
 
     const emailList = selectedListSusbcribers?.list
@@ -312,7 +341,9 @@ export default function EditCampaign() {
     );
     const updatedPlainText = replacePlainTextSource(emailData.bodyPlainText);
 
-    const s3Key = await saveCampaign.mutateAsync({
+    await updateCampaign.mutateAsync({
+      campaignId: router.query.campaignId,
+      s3key: uploadedS3Key,
       segmentName: selectedName,
       status: CAMPAIGN_STATUS.DRAFT,
       subscriberCount: selectedListSusbcribers?.list.length ?? 0,
@@ -323,13 +354,7 @@ export default function EditCampaign() {
       bodyPlainText: updatedPlainText,
     });
 
-    if (!s3Key) {
-      displayErrorToast("Failed to save data to s3!");
-      setSendingEmail(false);
-      return;
-    }
-
-    displaySuccessToast(`Draft successfully saved!`);
+    displaySuccessToast(`Draft successfully updated!`);
     await router.push("/campaigns");
   };
 
